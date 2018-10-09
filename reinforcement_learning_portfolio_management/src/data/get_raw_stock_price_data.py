@@ -21,6 +21,7 @@ def download_price_data(path, ticker, freq, start_date, end_date, sort_by_date_a
 
     if sort_by_date_ascending:
         pd_price_data.sort_values('date', ascending=True, inplace=True)
+        pd_price_data.reset_index(inplace=True, drop=True)
 
     file = path + ticker + '.h5'
     pd_price_data.to_hdf(file, key='df', mode='w')
@@ -28,8 +29,8 @@ def download_price_data(path, ticker, freq, start_date, end_date, sort_by_date_a
 
     pd.Series(ticker).to_hdf(file, key='ticker')
     pd.Series(freq).to_hdf(file, key='freq')
-    pd.Series(start_date).to_hdf(file, key='start_date')
-    pd.Series(end_date).to_hdf(file, key='end_date')
+    pd.Series(pd_price_data['formatted_date'].iloc[0]).to_hdf(file, key='start_date')
+    pd.Series(pd_price_data['formatted_date'].iloc[-1]).to_hdf(file, key='end_date')
     pd.Series(sort_by_date_ascending).to_hdf(file, key='sort_by_date_ascending')
     pd.Series(start_date).to_hdf(file, key='start_date')
     pd.Series(end_date).to_hdf(file, key='end_date')
@@ -45,9 +46,13 @@ def update_price_data(path, ticker, _start_date='2009-10-01', _end_date=str(date
     _start_date_DT = datetime.datetime.strptime(_start_date, '%Y-%m-%d')
     _end_date_DT = datetime.datetime.strptime(_end_date, '%Y-%m-%d')
 
-    df = pd.read_hdf(file, 'df')
-
+    retrieved_at = pd.read_hdf(file, 'retrieved_at')
+    updated_at = str(datetime.datetime.now())[:10]
     sort_by_date_ascending = pd.read_hdf(file, 'sort_by_date_ascending').iloc[-1]
+    freq = pd.read_hdf(file, 'freq').iloc[-1]
+
+
+    df = pd.read_hdf(file, 'df')
 
     if _start_date_DT < start_date_DT:
         yf = YahooFinancials(ticker)
@@ -67,22 +72,28 @@ def update_price_data(path, ticker, _start_date='2009-10-01', _end_date=str(date
 
     if sort_by_date_ascending:
         df.sort_values('date', ascending=True, inplace=True)
+        df.reset_index(inplace=True, drop=True)
 
     df.to_hdf(file, key='df', mode='w')
-    pd.Series(_start_date).to_hdf(file, key='start_date')
-    pd.Series(_end_date).to_hdf(file, key='end_date')
-    pd.Series(_end_date).to_hdf(file, key='end_date')
+    pd.Series(df['formatted_date'].iloc[0]).to_hdf(file, key='start_date')
+    pd.Series(df['formatted_date'].iloc[-1]).to_hdf(file, key='end_date')
+    pd.Series(freq).to_hdf(file, key='freq')
+    pd.Series(sort_by_date_ascending).to_hdf(file, key='sort_by_date_ascending')
+    pd.Series(retrieved_at).to_hdf(file, key='retrieved_at')
+    pd.Series(updated_at).to_hdf(file, key='updated_at')
+
 
     updated_at = str(datetime.datetime.now())[:10]
     pd.Series(updated_at).to_hdf(file, key='updated_at')
     print(str(ticker) + "'s" + " price data is updated")
 
 if __name__ == "__main__":
-    ticker_list = ['AAPL', 'PG', 'UL'] # In future, there will be a config file.
+    ticker_list = ['AAPL', 'PG', 'UL', 'FB', 'NVDA',
+                   'QCOM', 'TSLA', 'EBAY', 'CSCO', 'BIDU', 'GOOGL'] # In future, there will be a config file. NASDAQ-100 https://en.wikipedia.org/wiki/NASDAQ-100
     # Arguements
     path = '../../data/raw/'
     freq = 'daily'  # 'daily', 'weekly', or 'monthly'
-    start_date = '2012-10-01'
+    start_date = '2007-10-01'
     end_date = '2017-10-01'
     sort_by_date_ascending = True
 
@@ -91,7 +102,7 @@ if __name__ == "__main__":
         if TICKER + '.h5' not in price_data_in_raw:
            download_price_data(path, TICKER, freq = freq, start_date=start_date, end_date=end_date, sort_by_date_ascending=True)
         else:
-            update_price_data(path, TICKER, start_date)
+            update_price_data(path, TICKER, start_date, end_date)
 
 
 
