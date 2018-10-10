@@ -63,21 +63,20 @@ def plot_result_np(result_np):
     plt.show()
 
 
-if __name__ == "__main__":
-    path = '../../data/raw/'
-    freq = 'daily'  # 'daily', 'weekly', or 'monthly'
-    start_date = '2007-10-01'
-    end_date = '2017-09-29'
-    sort_by_date_ascending = True
-
+def data_preprocessing_1(ticker_list_input=None,
+                         path='../../data/raw/',
+                         freq = 'daily',  # 'daily', 'weekly', or 'monthly'
+                         start_date = '2007-10-01',
+                         end_date = '2017-09-29',
+                         sort_by_date_ascending = True):
+    if ticker_list_input is None:
+        ticker_list_input = ['AAPL', 'PG', 'UL', 'INTC', 'NVDA',
+                             'QCOM', 'MSFT', 'EBAY', 'CSCO', 'BIDU',
+                             'GOOGL']
     ticker_in_raw = os.listdir(path)
 
-    ticker_list_input = ['AAPL', 'PG', 'UL', 'INTC', 'NVDA',
-                         'QCOM', 'MSFT', 'EBAY', 'CSCO', 'BIDU',
-                         'GOOGL']
     # check if stock data exist
     ticker_list = []
-
     for ticker in ticker_list_input:
         print("working on", ticker)
         if ticker + '.h5' in ticker_in_raw:
@@ -123,6 +122,7 @@ if __name__ == "__main__":
     low_df.fillna(0, inplace=True)
     close_df.fillna(0, inplace=True)
 
+    # Remove non-trading days, which is the day that none of the stock/assets are traded that day
     open_df = open_df[open_df.sum(axis=1) != 0]
     high_df = high_df[high_df.sum(axis=1) != 0]
     low_df = low_df[low_df.sum(axis=1) != 0]
@@ -134,12 +134,27 @@ if __name__ == "__main__":
     close_np = np.array(close_df.iloc[:, 1:])
     result_np = np.stack([open_np, high_np, low_np, close_np], axis=0)
 
+    # print(np.mean(result_np[0, :, :] == open_np),
+    #       np.mean(result_np[1, :, :] == high_np),
+    #       np.mean(result_np[2, :, :] == low_np),
+    #       np.mean(result_np[3, :, :] == close_np))
+
+    return result_np
+
+
+
+if __name__ == "__main__":
+    path = '../../data/raw/'
+    freq = 'daily'  # 'daily', 'weekly', or 'monthly'
+    start_date = '2007-10-01'
+    end_date = '2017-09-29'
+    sort_by_date_ascending = True
+
+
+    result_np =  data_preprocessing_1()
     print('The resulting data has shape', str(result_np.shape) + ',',
           'and has', result_np.size - np.count_nonzero(result_np), 'missing data.')
 
-    print(np.mean(result_np[0, :, :] == open_np),
-          np.mean(result_np[1, :, :] == high_np),
-          np.mean(result_np[2, :, :] == low_np),
-          np.mean(result_np[3, :, :] == close_np))
+
 
     np.save('../../data/processed/20181004_1.npy', result_np, allow_pickle=True, fix_imports=True)
