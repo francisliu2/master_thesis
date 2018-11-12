@@ -9,8 +9,10 @@ import datetime
 import os, sys
 
 sys.path.append("../../")
-from src.data import get_raw_stock_price_data
-
+try:
+    from src.data import get_raw_stock_price_data
+except:
+    import get_raw_stock_price_data
 
 def check_data_avaliability(h5_file, start_date, end_date, freq, sort_by_date_ascending):
     start_date_h5 = datetime.datetime.strptime(pd.read_hdf(h5_file, 'start_date').iloc[-1], '%Y-%m-%d')

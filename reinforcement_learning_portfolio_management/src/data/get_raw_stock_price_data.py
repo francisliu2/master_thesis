@@ -40,7 +40,6 @@ def download_price_data(path, ticker, freq, start_date, end_date, sort_by_date_a
 
 def update_price_data(path, ticker, _start_date='2009-10-01', _end_date=str(datetime.datetime.now())[:10]):
     file = path + ticker + '.h5'
-
     start_date_DT = datetime.datetime.strptime(pd.read_hdf(file, 'start_date').iloc[-1], '%Y-%m-%d')
     end_date_DT = datetime.datetime.strptime(pd.read_hdf(file, 'end_date').iloc[-1], '%Y-%m-%d')
     _start_date_DT = datetime.datetime.strptime(_start_date, '%Y-%m-%d')
