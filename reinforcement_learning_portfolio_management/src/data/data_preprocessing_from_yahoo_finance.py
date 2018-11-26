@@ -130,6 +130,13 @@ def data_preprocessing_1(ticker_list_input=None,
     low_df = low_df[low_df.sum(axis=1) != 0]
     close_df = close_df[close_df.sum(axis=1) != 0]
 
+    # Replace zeros to value of last trading day
+    open_df.replace(to_replace=0, method='ffill', inplace=True)
+    high_df.replace(to_replace=0, method='ffill', inplace=True)
+    low_df.replace(to_replace=0, method='ffill', inplace=True)
+    close_df.replace(to_replace=0, method='ffill', inplace=True)
+    
+    
     open_np = np.array(open_df.iloc[:, 1:])
     high_np = np.array(high_df.iloc[:, 1:])
     low_np = np.array(low_df.iloc[:, 1:])
