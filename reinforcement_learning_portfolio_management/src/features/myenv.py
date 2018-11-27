@@ -11,13 +11,16 @@ class myenv:
         pass
         
     def __init__(self, result_np,
+                 price_window = 2000,
                  total_steps=100,
-                 reward_type=None,
+                 reward_type='log_return',
                  commission_rate = 0.05, 
-                 initial_weight = None): #reward_type can choose log_return
+                 initial_weight = None,
+                 stocks_name = None): #reward_type can choose log_return
         self.current_step = 0 # start from step 0
-        self.total_steps = total_steps # how many days to trade on
-        self.price_window = int(result_np.shape[1]-self.total_steps)-1 # How many data points to look at in each step
+        self.total_steps = total_steps
+#         self.price_window = int(result_np.shape[1]-self.total_steps)-1 # How many data points to look at in each step
+        self.price_window = price_window
         self.reward_type = reward_type
         self.commission_rate = commission_rate
                 
@@ -33,14 +36,16 @@ class myenv:
         
         # Observation Space
         self.observation_space_dimension = {'price_tensor':[4,self.price_window,result_np.shape[2]+1], 'weight':[self.all_prices.shape[2]]}
-    
-    def reset(self):
+
         # Backtest
         self.portfolio_size = []
         self.portfolio_return = []
         self.sharpe_ratio = 0
         self.weights = []
-        
+        self.total_commision = 0
+                
+    def reset(self):   
+        self.total_steps = min(self.total_steps, self.all_prices_normalized.shape[1] - self.price_window) # how many days to trade on
         if self.initial_weight is not None:
             weight = self.initial_weight # initialize weight
         else:
@@ -78,10 +83,11 @@ class myenv:
         
         # Commission
         commission = np.absolute(old_units-units) * self.commission_rate
+        self.total_commision += commission
         
         # Keep track
         self.portfolio_size.append(new_portfolio_size)
-        self.portfolio_return.append(reward)
+        self.portfolio_return.append(reward) # Update reward before turning it into log scale
         
         # next step
         self.current_step += 1
@@ -97,9 +103,19 @@ class myenv:
         
         return new_prices_toagent, weight, reward, done    
     
-    def render(self):
-        pass
+    def render_psize(self):
+        assert self.sharpe_ratio !=0, 'Have you end game?'
+        p1 = plt.plot(self.portfolio_size)
+        p2 = plt.plot(self.all_prices[3,-self.total_steps-1:,:]/self.all_prices[3,-self.total_steps-1,:])
+        return p1, p2
         # Plot the weight, return, and the price together. 
+        
+    def render_weights(self, include_start=True):
+        if include_start:
+            i = 1
+        else:
+            i=0
+        return plt.plot(self.weights[i:])
     
     def end_game(self):
         expected_return = np.mean(self.portfolio_return)
